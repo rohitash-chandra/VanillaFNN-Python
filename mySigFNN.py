@@ -216,8 +216,8 @@ def main():
         problem = 1
 
         if problem == 1:
- 	   TrainData = np.loadtxt("Data/train.csv", delimiter=',') #  
-           TestData = np.loadtxt("Data/test.csv", delimiter=',') #  
+ 	   TrainData = np.loadtxt("train.csv", delimiter=',') #  
+           TestData = np.loadtxt("test.csv", delimiter=',') #  
   	   Hidden = 8
            Input = 4
            Output = 2
@@ -228,8 +228,8 @@ def main():
            useNestmomen = 0
 
         if problem == 2:
- 	   TrainData = np.loadtxt("Data/4bit.csv", delimiter=',') #  
-           TestData = np.loadtxt("Data/4bit.csv", delimiter=',') #  
+ 	   TrainData = np.loadtxt("4bit.csv", delimiter=',') #  
+           TestData = np.loadtxt("4bit.csv", delimiter=',') #  
   	   Hidden = 6
            Input = 4
            Output = 1
