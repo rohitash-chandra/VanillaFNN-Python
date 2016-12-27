@@ -1,6 +1,8 @@
 # Rohitash Chandra, 2017 c.rohitash@gmail.conm
 
 #!/usr/bin/python
+
+# ref: http://iamtrask.github.io/2015/07/12/basic-python-network/  
  
 
 #Sigmoid units used in hidden and output layer. gradient descent and stocastic gradient descent functions implemented with momentum. Note:
@@ -18,15 +20,13 @@
 
 #no bias is implenmented 
 
-# Numpy used: http://cs231n.github.io/python-numpy-tutorial/#numpy-arrays 
+# Numpy used: http://cs231n.github.io/python-numpy-tutorial/#numpy-arrays
+ 
 
-from sklearn import datasets
-from sklearn.model_selection import cross_val_predict
-from sklearn import linear_model 
+ 
 
 import matplotlib.pyplot as plt
-import numpy as np
-from scipy.stats import   wilcoxon, ttest_ind, mannwhitneyu 
+import numpy as np 
 
 
 import random
@@ -35,7 +35,8 @@ import time
 #An example of a class
 class Network:
 
-    def __init__(self, Topo, Train, Test, MaxTime, Samples, MinPer): 
+    def __init__(self, Topo, Train, Test, MaxTime, Samples, MinPer):
+     
 
         self.epsilon = 0.1 # learning rate for gradient descent
         self.reg_lambda = 0.1 # regularization strength
@@ -61,8 +62,9 @@ class Network:
         self.BestW2 = self.W2
   	#self.b2 = np.zeros((1, self.Top[2]))
         self.hidout = np.zeros((1, self.Top[1])) # output of first hidden layer
-        self.out = np.zeros((1, self.Top[2])) #  output last layer 
-	
+        self.out = np.zeros((1, self.Top[2])) #  output last layer
+
+  
     def sigmoid(self,x):
         return 1 / (1 + np.exp(-x))
 
@@ -103,8 +105,21 @@ class Network:
                v2_prev = v2
                v1_prev = v1  
 	       self.W2+= (self.momenRate * v2_prev + (1 + self.momenRate) )  * v2
-       	       self.W1 += ( self.momenRate * v1_prev + (1 + self.momenRate) )  * v1   
-		
+       	       self.W1 += ( self.momenRate * v1_prev + (1 + self.momenRate) )  * v1 
+
+          
+
+        
+
+ 
+          
+    def compare_out(Out, Desired, erToler):
+      #traverse and check
+        return 0
+
+
+
+
     def TestNetwork(self, Data, testSize, erTolerance):
         Input = np.zeros((1, self.Top[0])) # temp hold input
         Desired = np.zeros((1, self.Top[2])) 
@@ -120,7 +135,15 @@ class Network:
                 Desired[:] =  Data[s,self.Top[0]:] 
 
                 self.ForwardPass(Input) 
-                sse = sse+ self.sampleEr(Desired)  
+                sse = sse+ self.sampleEr(Desired) 
+               # print sse
+
+              #  print self.out 
+               # print Desired
+               # print(s) 
+
+                #if(compareMethod(self.out, Desired, erTolerance)):
+
 
                 if(np.isclose(self.out, Desired, atol=erTolerance).any()):
                    clasPerf =  clasPerf +1 
@@ -148,7 +171,7 @@ class Network:
             #print(epoch)
             sse = 0
             for s in xrange(0, self.NumSamples):
-		
+              
                 if(stocastic):
                    pat = random.randint(0, self.NumSamples-1) 
                 else:
@@ -158,7 +181,6 @@ class Network:
                 Desired[:] = self.TrainData[pat,self.Top[0]:]
 
                 self.ForwardPass(Input) 
-		#here choose what method to use: comment either. 
         	#self.BackwardPassVanilla(Input, Desired)
                 self.BackwardPassMomentum(Input, Desired)
                 sse = sse+ self.sampleEr(Desired)
@@ -169,12 +191,16 @@ class Network:
                bestmse = mse
                self.saveKnowledge() 
                (x,bestTrain) = self.TestNetwork(self.TrainData, self.NumSamples, 0.2)
-	
+              # print(bestmse,x,bestTrain)
+
             Er = np.append(Er, mse)
-	
+
+            #print(mse, bestmse)
 
             epoch=epoch+1 
-	
+            #print(self.W1)
+            #print(self.BestW1)
+
         return (Er,bestmse, bestTrain, epoch) 
  
 
@@ -183,8 +209,8 @@ def main():
         problem = 1
 
         if problem == 1:
- 	   TrainData = np.loadtxt("train.csv", delimiter=',') #  
-           TestData = np.loadtxt("test.csv", delimiter=',') #  
+ 	   TrainData = np.loadtxt("Data/train.csv", delimiter=',') #  
+           TestData = np.loadtxt("Data/test.csv", delimiter=',') #  
   	   Hidden = 8
            Input = 4
            Output = 2
@@ -195,8 +221,8 @@ def main():
            useNestmomen = 0
 
         if problem == 2:
- 	   TrainData = np.loadtxt("4bit.csv", delimiter=',') #  
-           TestData = np.loadtxt("4bit.csv", delimiter=',') #  
+ 	   TrainData = np.loadtxt("Data/4bit.csv", delimiter=',') #  
+           TestData = np.loadtxt("Data/4bit.csv", delimiter=',') #  
   	   Hidden = 6
            Input = 4
            Output = 1
@@ -210,7 +236,9 @@ def main():
  
         #print(TrainData)
         
-        #print(TestData) 
+        #print(TestData)
+  
+ 
     
 
         Topo = [Input, Hidden, Output] 
@@ -230,7 +258,7 @@ def main():
         testMSE =  np.zeros(MaxRun)
         Epochs =  np.zeros(MaxRun)
         Time =  np.zeros(MaxRun)
-        # run multiple experiments for a problem. Report mean and std dev and output convergence plot
+
         for run in xrange(0, MaxRun  ): 
                  print run
                  fnnSGD = Network(Topo, TrainData, TestData, MaxTime, TrSamples, MinCriteria) # Stocastic GD
@@ -249,13 +277,14 @@ def main():
         print Time
         print(np.mean(trainPerf), np.std(trainPerf))
         print(np.mean(testPerf), np.std(testPerf))
-        print(np.mean(Time), np.std(Time)) 
+        print(np.mean(Time), np.std(Time))
+ 	
+  
          
  	plt.figure()
 	plt.plot(erEp )
 	plt.ylabel('error')  
-        plt.savefig('out.png') 
+        plt.savefig('out.png')
+       
  
 if __name__ == "__main__": main()
-
-
