@@ -17,8 +17,7 @@
 #W(t+1) = W(t) + vW(t+1)
 
 #http://jmlr.org/proceedings/papers/v28/sutskever13.pdf
-
-#no bias is implenmented 
+ 
 
 # Numpy used: http://cs231n.github.io/python-numpy-tutorial/#numpy-arrays
  
@@ -52,9 +51,13 @@ class Network:
         self.minPerf = MinPer
                                         #initialize weights ( W1 W2 ) and bias ( b1 b2 ) of the network
     	np.random.seed(0) 
-   	self.W1 = np.random.randn(self.Top[0]  +1 , self.Top[1])  / np.sqrt(self.Top[0]+1) 
+   	self.W1 = np.random.randn(self.Top[0]  , self.Top[1])  / np.sqrt(self.Top[0] ) 
+        self.B1 = np.random.randn(1  , self.Top[1])  / np.sqrt(self.Top[1] ) # bias first layer
+        self.BestB1 = self.B1
         self.BestW1 = self.W1 
     	self.W2 = np.random.randn(self.Top[1] , self.Top[2]) / np.sqrt(self.Top[1] )
+        self.B2 = np.random.randn(1  , self.Top[2])  / np.sqrt(self.Top[1] ) # bias second layer
+        self.BestB2 = self.B2
         self.BestW2 = self.W2 
         self.hidout = np.zeros((1, self.Top[1] )) # output of first hidden layer
         self.out = np.zeros((1, self.Top[2])) #  output last layer
@@ -69,39 +72,39 @@ class Network:
         #print sqerror
         return sqerror
   
-    def ForwardPass(self, X ):
-        
-         z1 = X.dot(self.W1)  
-          
-         self.hidout = self.sigmoid(z1) # output of first hidden layer  
-         z2 = self.hidout.dot(self.W2) 
+    def ForwardPass(self, X ): 
+         z1 = X.dot(self.W1) - self.B1  
+         self.hidout = self.sigmoid(z1) # output of first hidden layer   
+         z2 = self.hidout.dot(self.W2)  - self.B2 
          self.out = self.sigmoid(z2)  # output second hidden layer
   	 
  
   
     def BackwardPassMomentum(self, Input, desired, vanilla):   
-            out_delta =   (desired - self.out)*(self.out*(1-self.out)) 
-            #print out_delta
+            out_delta =   (desired - self.out)*(self.out*(1-self.out))  
             hid_delta = out_delta.dot(self.W2.T) * (self.hidout * (1-self.hidout))
             
-            if vanilla == 1: #no momentum
-                
-               self.W2+= (self.hidout.T.dot(out_delta) * self.lrate)  
-               #print self.W2
-               self.W1 += (Input.T.dot(hid_delta) * self.lrate) 
-               
+            if vanilla == 1: #no momentum 
+                self.W2+= (self.hidout.T.dot(out_delta) * self.lrate)  
+                self.B2+=  (-1 * self.lrate * out_delta)
+                self.W1 += (Input.T.dot(hid_delta) * self.lrate) 
+                self.B1+=  (-1 * self.lrate * hid_delta)
               
             else:
  	    	v2 = self.W2 #save previous weights http://cs231n.github.io/neural-networks-3/#sgd
 	    	v1 = self.W1 
-          
-
+                b2 = self.B2
+                b1 = self.B1 
             	v2 = ( v2 *self.momenRate) + (self.hidout.T.dot(out_delta) * self.lrate)       # velocity update
-            	v1 = ( v1 *self.momenRate) + (Input.T.dot(hid_delta) * self.lrate)  
+            	v1 = ( v1 *self.momenRate) + (Input.T.dot(hid_delta) * self.lrate)   
+                v2 = ( v2 *self.momenRate) + (-1 * self.lrate * out_delta)       # velocity update
+            	v1 = ( v1 *self.momenRate) + (-1 * self.lrate * hid_delta)   
 
            	if self.useNesterovMomen == 0: # use classical momentum 
                	   self.W2+= v2
        	           self.W1 += v1 
+                   self.B2+= b2
+       	           self.B1 += b1 
 
             	else: # useNesterovMomen http://cs231n.github.io/neural-networks-3/#sgd
                    v2_prev = v2
@@ -109,18 +112,7 @@ class Network:
 	           self.W2+= (self.momenRate * v2_prev + (1 + self.momenRate) )  * v2
        	           self.W1 += ( self.momenRate * v1_prev + (1 + self.momenRate) )  * v1 
 
-          
-
-        
-
- 
-          
-    def compare_out(Out, Desired, erToler):
-      #traverse and check
-        return 0
-
-
-
+           
 
     def TestNetwork(self, Data, testSize, erTolerance):
         Input = np.zeros((1, self.Top[0])) # temp hold input
@@ -130,14 +122,15 @@ class Network:
      	sse = 0  
         self.W1 = self.BestW1
         self.W2 = self.BestW2 #load best knowledge
+        self.B1 = self.BestB1
+        self.B2 = self.BestB2 #load best knowledge
      
         for s in xrange(0, testSize):
                   
                 Input[:]  =   Data[s,0:self.Top[0]] 
                 Desired[:] =  Data[s,self.Top[0]:] 
-                In   =  np.concatenate((Input, [[1.0]]), axis=1) # just to add bias support for  first hidden layer
-
-                self.ForwardPass(In ) 
+               
+                self.ForwardPass(Input ) 
                 sse = sse+ self.sampleEr(Desired)  
 
 
@@ -149,7 +142,9 @@ class Network:
  
     def saveKnowledge(self):
         self.BestW1 = self.W1
-        self.BestW2 = self.W2 
+        self.BestW2 = self.W2
+        self.BestB1 = self.B1
+        self.BestB2 = self.B2  
  
     def BP_GD(self, learnRate, mRate,  useNestmomen , stocastic, vanilla): # BP with SGD (Stocastic BP)
         self.lrate = learnRate
@@ -175,10 +170,10 @@ class Network:
                 Input[:]  =  self.TrainData[pat,0:self.Top[0]]  
                 Desired[:] = self.TrainData[pat,self.Top[0]:]  
 
-                In  =  np.concatenate((Input, [[1.0]]), axis=1)  ## just to add bias support for  first hidden layer(note bias is appended to input) 
+               
         
-                self.ForwardPass(In )  
-                self.BackwardPassMomentum(In , Desired, vanilla)
+                self.ForwardPass(Input )  
+                self.BackwardPassMomentum(Input , Desired, vanilla)
                 sse = sse+ self.sampleEr(Desired)
              
             mse = np.sqrt(sse/self.NumSamples*self.Top[2])
@@ -190,12 +185,9 @@ class Network:
               
 
             Er = np.append(Er, mse)
+ 
 
-            #print(mse, bestmse)
-
-            epoch=epoch+1 
-            #print(self.W1)
-            #print(self.BestW1)
+            epoch=epoch+1  
 
         return (Er,bestmse, bestTrain, epoch) 
 
@@ -210,7 +202,7 @@ def normalisedata(data, inputsize, outsize): # normalise the data between [0,1]
 def main(): 
           
     
-        problem = 2 # choose your problem (Iris classfication or 4-bit parity)
+        problem = 2 # [1,2,3] choose your problem (Iris classfication or 4-bit parity or XOR gate)
         
 
         if problem == 1:
@@ -225,7 +217,7 @@ def main():
            mRate = 0.01   
            TrainData  = normalisedata(TrDat, Input, Output) 
 	   TestData  = normalisedata(TesDat, Input, Output)
-           MaxTime = 200
+           MaxTime = 500
 
 
            
@@ -233,7 +225,7 @@ def main():
         if problem == 2:
  	   TrainData = np.loadtxt("4bit.csv", delimiter=',') #  4-bit parity problem
            TestData = np.loadtxt("4bit.csv", delimiter=',') #  
-  	   Hidden = 6
+  	   Hidden = 4
            Input = 4
            Output = 1
            TrSamples =  16
@@ -250,9 +242,9 @@ def main():
            Output = 1
            TrSamples =  4
            TestSize = 4
-           learnRate = 0.8 
+           learnRate = 0.9 
            mRate = 0.01
-           MaxTime = 1000 
+           MaxTime = 500 
 
         print(TrainData)
 
@@ -310,5 +302,4 @@ def main():
        
  
 if __name__ == "__main__": main()
-
 
