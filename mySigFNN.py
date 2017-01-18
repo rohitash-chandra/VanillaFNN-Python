@@ -27,8 +27,6 @@
 
 import matplotlib.pyplot as plt
 import numpy as np 
-
-
 import random
 import time
 
@@ -54,14 +52,11 @@ class Network:
         self.minPerf = MinPer
                                         #initialize weights ( W1 W2 ) and bias ( b1 b2 ) of the network
     	np.random.seed(0) 
-   	self.W1 = np.random.randn(self.Top[0], self.Top[1])  / np.sqrt(self.Top[0])
-      #  print self.W1
-        self.BestW1 = self.W1
-        #self.b1 = np.zeros((1, self.Top[1]))
-    	self.W2 = np.random.randn(self.Top[1], self.Top[2]) / np.sqrt(self.Top[1])
-        self.BestW2 = self.W2
-  	#self.b2 = np.zeros((1, self.Top[2]))
-        self.hidout = np.zeros((1, self.Top[1])) # output of first hidden layer
+   	self.W1 = np.random.randn(self.Top[0]  +1 , self.Top[1])  / np.sqrt(self.Top[0]+1) 
+        self.BestW1 = self.W1 
+    	self.W2 = np.random.randn(self.Top[1] , self.Top[2]) / np.sqrt(self.Top[1] )
+        self.BestW2 = self.W2 
+        self.hidout = np.zeros((1, self.Top[1] )) # output of first hidden layer
         self.out = np.zeros((1, self.Top[2])) #  output last layer
 
   
@@ -75,37 +70,44 @@ class Network:
         return sqerror
   
     def ForwardPass(self, X ):
-         z1 = X.dot(self.W1) #+ self.b1
-         self.hidout = self.sigmoid(z1) # output of first hidden layer
-         z2 = self.hidout.dot(self.W2)# + self.b2
-         self.out = self.sigmoid(z2)  # output second hidden layer
-  	   
-
-    def BackwardPassVanilla(self, Input, desired):  #implements   Vanilla BP (Canonical BP)
-       	  out_delta =   (desired - self.out)*(self.out*(1-self.out)) 
-          hid_delta = out_delta.dot(self.W2.T) * (self.hidout * (1-self.hidout)) 
-          self.W2+= (self.hidout.T.dot(out_delta) * self.lrate)  
-          self.W1 += (Input.T.dot(hid_delta) * self.lrate) 
-  
-    def BackwardPassMomentum(self, Input, desired):   
-            out_delta =   (desired - self.out)*(self.out*(1-self.out)) 
-            hid_delta = out_delta.dot(self.W2.T) * (self.hidout * (1-self.hidout))
         
- 	    v2 = self.W2 #save previous weights http://cs231n.github.io/neural-networks-3/#sgd
-	    v1 = self.W1 
+         z1 = X.dot(self.W1)  
+          
+         self.hidout = self.sigmoid(z1) # output of first hidden layer  
+         z2 = self.hidout.dot(self.W2) 
+         self.out = self.sigmoid(z2)  # output second hidden layer
+  	 
+ 
+  
+    def BackwardPassMomentum(self, Input, desired, vanilla):   
+            out_delta =   (desired - self.out)*(self.out*(1-self.out)) 
+            #print out_delta
+            hid_delta = out_delta.dot(self.W2.T) * (self.hidout * (1-self.hidout))
+            
+            if vanilla == 1: #no momentum
+                
+               self.W2+= (self.hidout.T.dot(out_delta) * self.lrate)  
+               #print self.W2
+               self.W1 += (Input.T.dot(hid_delta) * self.lrate) 
+               
+              
+            else:
+ 	    	v2 = self.W2 #save previous weights http://cs231n.github.io/neural-networks-3/#sgd
+	    	v1 = self.W1 
+          
 
-            v2 = ( v2 *self.momenRate) + (self.hidout.T.dot(out_delta) * self.lrate)       # velocity update
-            v1 = ( v1 *self.momenRate) + (Input.T.dot(hid_delta) * self.lrate)  
+            	v2 = ( v2 *self.momenRate) + (self.hidout.T.dot(out_delta) * self.lrate)       # velocity update
+            	v1 = ( v1 *self.momenRate) + (Input.T.dot(hid_delta) * self.lrate)  
 
-            if self.useNesterovMomen == 0: # use classical momentum 
-               self.W2+= v2
-       	       self.W1 += v1 
+           	if self.useNesterovMomen == 0: # use classical momentum 
+               	   self.W2+= v2
+       	           self.W1 += v1 
 
-            else: # useNesterovMomen http://cs231n.github.io/neural-networks-3/#sgd
-               v2_prev = v2
-               v1_prev = v1  
-	       self.W2+= (self.momenRate * v2_prev + (1 + self.momenRate) )  * v2
-       	       self.W1 += ( self.momenRate * v1_prev + (1 + self.momenRate) )  * v1 
+            	else: # useNesterovMomen http://cs231n.github.io/neural-networks-3/#sgd
+                   v2_prev = v2
+                   v1_prev = v1 
+	           self.W2+= (self.momenRate * v2_prev + (1 + self.momenRate) )  * v2
+       	           self.W1 += ( self.momenRate * v1_prev + (1 + self.momenRate) )  * v1 
 
           
 
@@ -133,21 +135,14 @@ class Network:
                   
                 Input[:]  =   Data[s,0:self.Top[0]] 
                 Desired[:] =  Data[s,self.Top[0]:] 
+                In   =  np.concatenate((Input, [[1.0]]), axis=1) # just to add bias support for  first hidden layer
 
-                self.ForwardPass(Input) 
-                sse = sse+ self.sampleEr(Desired) 
-               # print sse
-
-              #  print self.out 
-               # print Desired
-               # print(s) 
-
-                #if(compareMethod(self.out, Desired, erTolerance)):
+                self.ForwardPass(In ) 
+                sse = sse+ self.sampleEr(Desired)  
 
 
                 if(np.isclose(self.out, Desired, atol=erTolerance).any()):
-                   clasPerf =  clasPerf +1 
-                #   print clasPerf
+                   clasPerf =  clasPerf +1  
 
    	return ( sse/testSize, float(clasPerf)/testSize * 100 )
 
@@ -156,7 +151,7 @@ class Network:
         self.BestW1 = self.W1
         self.BestW2 = self.W2 
  
-    def BP_GD(self, learnRate, mRate,  useNestmomen , stocastic): # BP with SGD (Stocastic BP)
+    def BP_GD(self, learnRate, mRate,  useNestmomen , stocastic, vanilla): # BP with SGD (Stocastic BP)
         self.lrate = learnRate
         self.momenRate = mRate
         self.useNesterovMomen =  useNestmomen  
@@ -168,30 +163,31 @@ class Network:
         bestmse = 100
         bestTrain = 0
         while  epoch < self.Max and bestTrain < self.minPerf :
-            #print(epoch)
+           
             sse = 0
             for s in xrange(0, self.NumSamples):
-              
+                 
                 if(stocastic):
                    pat = random.randint(0, self.NumSamples-1) 
                 else:
                    pat = s 
 
-                Input[:]  =  self.TrainData[pat,0:self.Top[0]] 
-                Desired[:] = self.TrainData[pat,self.Top[0]:]
+                Input[:]  =  self.TrainData[pat,0:self.Top[0]]  
+                Desired[:] = self.TrainData[pat,self.Top[0]:]  
 
-                self.ForwardPass(Input) 
-        	#self.BackwardPassVanilla(Input, Desired)
-                self.BackwardPassMomentum(Input, Desired)
+                In  =  np.concatenate((Input, [[1.0]]), axis=1)  ## just to add bias support for  first hidden layer(note bias is appended to input) 
+        
+                self.ForwardPass(In )  
+                self.BackwardPassMomentum(In , Desired, vanilla)
                 sse = sse+ self.sampleEr(Desired)
              
-            mse = np.sqrt(sse/self.NumSamples)
+            mse = np.sqrt(sse/self.NumSamples*self.Top[2])
 
             if mse < bestmse:
                bestmse = mse
                self.saveKnowledge() 
                (x,bestTrain) = self.TestNetwork(self.TrainData, self.NumSamples, 0.2)
-              # print(bestmse,x,bestTrain)
+              
 
             Er = np.append(Er, mse)
 
@@ -202,55 +198,81 @@ class Network:
             #print(self.BestW1)
 
         return (Er,bestmse, bestTrain, epoch) 
- 
+
+
+
+def normalisedata(data, inputsize, outsize): # normalise the data between [0,1]
+    traindt = data[:,np.array(range(0,inputsize))]	
+    dt = np.amax(traindt, axis=0)
+    tds = abs(traindt/dt) 
+    return np.concatenate(( tds[:,range(0,inputsize)], data[:,range(inputsize,inputsize+outsize)]), axis=1)
 
 def main(): 
-
-        problem = 1
+          
+    
+        problem = 2 # choose your problem (Iris classfication or 4-bit parity)
+        
 
         if problem == 1:
- 	   TrainData = np.loadtxt("Data/train.csv", delimiter=',') #  
-           TestData = np.loadtxt("Data/test.csv", delimiter=',') #  
-  	   Hidden = 8
+ 	   TrDat  = np.loadtxt("Data/train.csv", delimiter=',') #  Iris classification problem (UCI dataset)
+           TesDat  = np.loadtxt("Data/test.csv", delimiter=',') #  
+  	   Hidden = 6
            Input = 4
            Output = 2
            TrSamples =  110
            TestSize = 40
            learnRate = 0.1 
-           mRate = 0.01
-           useNestmomen = 0
+           mRate = 0.01   
+           TrainData  = normalisedata(TrDat, Input, Output) 
+	   TestData  = normalisedata(TesDat, Input, Output)
+           MaxTime = 200
+
+
+           
 
         if problem == 2:
- 	   TrainData = np.loadtxt("Data/4bit.csv", delimiter=',') #  
+ 	   TrainData = np.loadtxt("Data/4bit.csv", delimiter=',') #  4-bit parity problem
            TestData = np.loadtxt("Data/4bit.csv", delimiter=',') #  
   	   Hidden = 6
            Input = 4
            Output = 1
            TrSamples =  16
            TestSize = 16
-           learnRate = 0.1 
+           learnRate = 0.9 
            mRate = 0.01
-           useNestmomen = 1
+           MaxTime = 3000
 
+        if problem == 3:
+ 	   TrainData = np.loadtxt("Data/xor.csv", delimiter=',') #  4-bit parity problem
+           TestData = np.loadtxt("Data/xor.csv", delimiter=',') #  
+  	   Hidden = 3
+           Input = 2
+           Output = 1
+           TrSamples =  4
+           TestSize = 4
+           learnRate = 0.8 
+           mRate = 0.01
+           MaxTime = 1000 
 
- 
-        #print(TrainData)
-        
-        #print(TestData)
-  
+        print(TrainData)
+
  
     
 
         Topo = [Input, Hidden, Output] 
         MaxRun = 10 # number of experimental runs 
-        MaxTime = 200 
+         
         MinCriteria = 95 #stop when learn 95 percent
         
-        trainTolerance = 0.4
-        testTolerance = 0.2
+        trainTolerance = 0.2 # [eg 0.15 would be seen as 0] [ 0.81 would be seen as 1]
+        testTolerance = 0.4
         
         useStocasticGD = 1 # 0 for vanilla BP. 1 for Stocastic BP
-       
+        useVanilla = 1 # 1 for Vanilla Gradient Descent, 0 for Gradient Descent with momentum (either regular momentum or nesterov momen) 
+        useNestmomen = 0 # 0 for regular momentum, 1 for Nesterov momentum
+         
+        
+
         trainPerf = np.zeros(MaxRun)
         testPerf =  np.zeros(MaxRun)
 
@@ -263,7 +285,7 @@ def main():
                  print run
                  fnnSGD = Network(Topo, TrainData, TestData, MaxTime, TrSamples, MinCriteria) # Stocastic GD
         	 start_time=time.time()
-                 (erEp,  trainMSE[run] , trainPerf[run] , Epochs[run]) = fnnSGD.BP_GD(learnRate, mRate, useNestmomen,  useStocasticGD)   
+                 (erEp,  trainMSE[run] , trainPerf[run] , Epochs[run]) = fnnSGD.BP_GD(learnRate, mRate, useNestmomen,  useStocasticGD, useVanilla)   
 
                  Time[run]  =time.time()-start_time
                  (testMSE[run], testPerf[run]) = fnnSGD.TestNetwork(TestData, TestSize, testTolerance)
@@ -288,3 +310,5 @@ def main():
        
  
 if __name__ == "__main__": main()
+
+
