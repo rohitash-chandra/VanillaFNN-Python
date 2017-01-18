@@ -214,8 +214,8 @@ def main():
         
 
         if problem == 1:
- 	   TrDat  = np.loadtxt("Data/train.csv", delimiter=',') #  Iris classification problem (UCI dataset)
-           TesDat  = np.loadtxt("Data/test.csv", delimiter=',') #  
+ 	   TrDat  = np.loadtxt("train.csv", delimiter=',') #  Iris classification problem (UCI dataset)
+           TesDat  = np.loadtxt("test.csv", delimiter=',') #  
   	   Hidden = 6
            Input = 4
            Output = 2
@@ -231,8 +231,8 @@ def main():
            
 
         if problem == 2:
- 	   TrainData = np.loadtxt("Data/4bit.csv", delimiter=',') #  4-bit parity problem
-           TestData = np.loadtxt("Data/4bit.csv", delimiter=',') #  
+ 	   TrainData = np.loadtxt("4bit.csv", delimiter=',') #  4-bit parity problem
+           TestData = np.loadtxt("4bit.csv", delimiter=',') #  
   	   Hidden = 6
            Input = 4
            Output = 1
@@ -243,8 +243,8 @@ def main():
            MaxTime = 3000
 
         if problem == 3:
- 	   TrainData = np.loadtxt("Data/xor.csv", delimiter=',') #  4-bit parity problem
-           TestData = np.loadtxt("Data/xor.csv", delimiter=',') #  
+ 	   TrainData = np.loadtxt("xor.csv", delimiter=',') #  4-bit parity problem
+           TestData = np.loadtxt("xor.csv", delimiter=',') #  
   	   Hidden = 3
            Input = 2
            Output = 1
