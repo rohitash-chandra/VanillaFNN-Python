@@ -50,7 +50,7 @@ class Network:
 
         self.minPerf = MinPer
                                         #initialize weights ( W1 W2 ) and bias ( b1 b2 ) of the network
-    	np.random.seed(0) 
+    	np.random.seed() 
    	self.W1 = np.random.randn(self.Top[0]  , self.Top[1])  / np.sqrt(self.Top[0] ) 
         self.B1 = np.random.randn(1  , self.Top[1])  / np.sqrt(self.Top[1] ) # bias first layer
         self.BestB1 = self.B1
