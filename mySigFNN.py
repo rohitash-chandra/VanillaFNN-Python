@@ -32,11 +32,7 @@ import time
 #An example of a class
 class Network:
 
-    def __init__(self, Topo, Train, Test, MaxTime, Samples, MinPer):
-     
-
-        self.epsilon = 0.1 # learning rate for gradient descent
-        self.reg_lambda = 0.1 # regularization strength
+    def __init__(self, Topo, Train, Test, MaxTime, Samples, MinPer): 
         self.Top  = Topo  # NN topology [input, hidden, output]
         self.Max = MaxTime # max epocs
         self.TrainData = Train
