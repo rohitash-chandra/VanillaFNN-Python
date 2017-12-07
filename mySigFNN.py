@@ -68,45 +68,32 @@ class Network:
         #print sqerror
         return sqerror
   
-    def ForwardPass(self, X ): 
-         z1 = X.dot(self.W1) - self.B1  
-         self.hidout = self.sigmoid(z1) # output of first hidden layer   
-         z2 = self.hidout.dot(self.W2)  - self.B2 
-         self.out = self.sigmoid(z2)  # output second hidden layer
-  	 
- 
-  
+    def ForwardPass(self, X ):
+        nesterov = self.W1 + self.momenRate*self.V1 if self.useNesterovMomen else 0 #Nesterov lookahead
+        z1 = X.dot(self.W1) - self.B1  
+        self.hidout = self.sigmoid(z1) # output of first hidden layer  
+        nesterov = self.W2 + self.momenRate*self.V2 if self.useNesterovMomen else 0 #Nesterov lookahead
+        z2 = self.hidout.dot(self.W2)  - self.B2 
+        self.out = self.sigmoid(z2)  # output second hidden layer 
+        
     def BackwardPassMomentum(self, Input, desired, vanilla):   
-            out_delta =   (desired - self.out)*(self.out*(1-self.out))  
-            hid_delta = out_delta.dot(self.W2.T) * (self.hidout * (1-self.hidout))
-            
-            if vanilla == 1: #no momentum 
-                self.W2+= (self.hidout.T.dot(out_delta) * self.lrate)  
-                self.B2+=  (-1 * self.lrate * out_delta)
-                self.W1 += (Input.T.dot(hid_delta) * self.lrate) 
-                self.B1+=  (-1 * self.lrate * hid_delta)
+        
+        old_w2 = self.W2
+        old_w1 = self.W1
+		
+	out_delta =   (desired - self.out)*(self.out*(1-self.out))  
+        hid_delta = out_delta.dot(self.W2.T) * (self.hidout * (1-self.hidout))
               
-            else:
- 	    	v2 = self.W2 #save previous weights http://cs231n.github.io/neural-networks-3/#sgd
-	    	v1 = self.W1 
-                b2 = self.B2
-                b1 = self.B1 
-            	v2 = ( v2 *self.momenRate) + (self.hidout.T.dot(out_delta) * self.lrate)       # velocity update
-            	v1 = ( v1 *self.momenRate) + (Input.T.dot(hid_delta) * self.lrate)   
-                v2 = ( v2 *self.momenRate) + (-1 * self.lrate * out_delta)       # velocity update
-            	v1 = ( v1 *self.momenRate) + (-1 * self.lrate * hid_delta)   
+	self.W2 += (self.hidout.T.dot(out_delta) * self.lrate)
+	self.B2 += (-1 * self.lrate * out_delta)
+        self.W1 += (Input.T.dot(hid_delta) * self.lrate)
+        self.B1 += (-1 * self.lrate * hid_delta)
 
-           	if self.useNesterovMomen == 0: # use classical momentum 
-               	   self.W2+= v2
-       	           self.W1 += v1 
-                   self.B2+= b2
-       	           self.B1 += b1 
-
-            	else: # useNesterovMomen http://cs231n.github.io/neural-networks-3/#sgd
-                   v2_prev = v2
-                   v1_prev = v1 
-	           self.W2+= (self.momenRate * v2_prev + (1 + self.momenRate) )  * v2
-       	           self.W1 += ( self.momenRate * v1_prev + (1 + self.momenRate) )  * v1 
+        if not vanilla: #momentum (both classic or Nesterov)
+	   self.W2 += self.momenRate * self.V2
+	   self.V2 = self.W2 - old_w2
+           self.W1 += self.momenRate * self.V1
+           self.V1 = self.W1 - old_w1
 
            
 
@@ -146,6 +133,8 @@ class Network:
         self.lrate = learnRate
         self.momenRate = mRate
         self.useNesterovMomen =  useNestmomen  
+        self.V1 = np.zeros((self.Top[0], self.Top[1]))
+        self.V2 = np.zeros((self.Top[0], self.Top[2]))
      
         Input = np.zeros((1, self.Top[0])) # temp hold input
         Desired = np.zeros((1, self.Top[2])) 
