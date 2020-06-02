@@ -213,8 +213,8 @@ def main():
 				
 
 	if problem == 1:
-		TrDat  = np.loadtxt("data/train.csv", delimiter=',') #  Iris classification problem (UCI dataset)
-		TesDat  = np.loadtxt("data/test.csv", delimiter=',') #  
+		TrDat  = np.loadtxt("train.csv", delimiter=',') #  Iris classification problem (UCI dataset)
+		TesDat  = np.loadtxt("test.csv", delimiter=',') #  
 		Hidden = 6
 		Input = 4
 		Output = 2 #https://stats.stackexchange.com/questions/207049/neural-network-for-binary-classification-use-1-or-2-output-neurons
@@ -235,7 +235,7 @@ def main():
 		from sklearn.model_selection import train_test_split 
 		import pandas as pd
 
-		df = pd.read_csv('data/diabetes.csv') #https://www.kaggle.com/uciml/pima-indians-diabetes-database/data?select=diabetes.csv
+		df = pd.read_csv('diabetes.csv') #https://www.kaggle.com/uciml/pima-indians-diabetes-database/data?select=diabetes.csv
 		#print(df.shape)
 		print(df.describe().transpose())
 		#https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.transpose.html
